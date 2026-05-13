@@ -1,5 +1,7 @@
 ---
+
 title: "MATH 244: Intermediate Data Science Project - Daniel and Anni"
+
 ---
 
 Welcome! This is a template for creating a website using quarto and GitHub pages.
@@ -7,3 +9,563 @@ Welcome! This is a template for creating a website using quarto and GitHub pages
 ![](hedgehog.png){fig-align="center" width="603"}
 
 [Artwork by \@allison_horst](https://twitter.com/allison_horst)
+
+
+This project analyzes the Gender Wage Gap between 2013-2016.
+
+
+---
+title: "Math244Report"
+editor: visual
+---
+```{r, include=FALSE}
+library(tidyverse)
+library(skimr)
+library(knitr)
+library(kableExtra)
+library(scales)
+library(dplyr)
+wage_data <- read_csv("wage_data_raw.csv")
+```
+
+# Introduction 
+  While the gender wage gap is well known, it doesn’t affect all occupations equally. Some industries show larger differences than others. This raises an important question — what factors actually drive these wage differences? Specifically, this project asks whether occupation gender composition, workforce size, and industry category are associated with differences in the gender wage gap across occupations. Understanding this can help us move beyond just identifying the gap to explaining it. 
+  Our goal is to look at occupation-level variation in the gender wage gap to understand what factors drive differences in earnings. The data comes from TidyTuesday, which sourced the dataset from the Bureau of Labor Statistics. The data was collected from 2013 to 2016 and has about 2,000 observations that focus on earnings, percent female, and industry. For methods, we use linear regression to analyze relationships, Lasso and Ridge to identify important predictors, and K-means to explore patterns beyond industry categories.
+
+# Exploring the Data
+  One of our outcome variables, which we created is wage_gap, calculated as the dollar difference between male
+and female median earnings. This variable captures the raw income disparity and allows us to examine the
+magnitude of the earnings gap. We expect this value to be generally positive, indicating men have a higher
+median earnings across most occupations.
+
+  A second outcome variable we are using, wage_percent_of_male, is included in our dataset. It measures
+female median earnings as a percentage of male median earnings. A value of 100 would indicate perfect
+parity; values below 100 indicate women earn less than men. This variable allows us to analyze relative
+disparity. We expect this variable to generally fall below 100 for most occupations.
+
+Our key explanatory variables are:
+  -percent_female: The percent of females for specific occupation
+  -total_workers: Total estimated full-time workers > 16 years old
+  -major_category: Broad category of occupation
+  -minor_category: Fine category of occupation
+  -occupation: Specific job/career
+  -year: years from 2013-2016
+  
+We chose those variables based on both economic reasoning and our EDA. Percent female captures gender composition, which is central to our question, while total workers and industry categories help control for structural differences across occupations. The inclusion of year also allows us to examine whether patterns in the wage gap changed over time.
+
+```{r}
+#Select the variables we plan to use
+wages_selected <- wage_data %>%
+  select(wage_percent_of_male, percent_female,
+  year, major_category, minor_category,
+  percent_female, total_workers,
+  major_category, minor_category,
+  occupation, year)
+```
+
+```{r, echo=FALSE}
+# Summary table of numeric variables (except year)
+wages_selected %>%
+  select(where(is.numeric), -year) %>%
+  summarise(across(everything(),
+    list(
+      N = ~sum(!is.na(.)),
+      Mean = ~round(mean(., na.rm = TRUE), 1),
+      SD = ~round(sd(., na.rm = TRUE), 1),
+      Min = ~round(min(., na.rm = TRUE), 1),
+      Median = ~round(median(., na.rm = TRUE), 1),
+      Max = ~round(max(., na.rm = TRUE), 1)
+    )
+  )) %>%
+  pivot_longer(
+    everything(),
+    names_to = c("Variable", "Statistic"),
+    names_pattern = "(.*)_(.*)"
+  ) %>%
+  pivot_wider(names_from = Statistic, values_from = value) %>%
+  kable(caption = "Table 1: Summary Statistics for Key Variables") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE)
+```
+Table 1 summarizes the key variables used in the analysis. Female earnings averaged 84% of male earnings across occupations, while percent female ranged from 0% to 100%, showing substantial variation in occupational gender composition. The total number of workers also varied considerably across occupations and industries.
+
+Looking at the overview of summary statistics below, everything is based off women. First, women earn about 84% of male earnings on average, which already shows a noticeable wage gap. Second, the median wage gap is around $8,600, which isn’t a small difference. And finally, there’s a lot of variation in percent female across occupations—from almost 0% to 100%—which makes it a really important variable to analyze
+
+
+Data Wrangling and Transformation
+
+```{r, echo=FALSE}
+#Create a new variable: wage_gap
+  wage_data <- wage_data %>%
+  mutate(wage_gap = total_earnings_male - total_earnings_female)
+```
+
+```{r, echo=FALSE}
+# Cleaned dataset version 1: Dropped occupations with any missing wage_percent_of_male values
+wage_data_complete_cases <- wage_data %>%
+  group_by(occupation) %>%
+  filter(!any(is.na(wage_percent_of_male))) %>%
+  ungroup()
+
+```
+
+
+```{r, echo=FALSE}
+# Cleaned dataset version 2: Retained all observations, computed missing wage_percent_of_male vlaues
+wage_data_imputed <- wage_data %>%
+  mutate(
+    wage_percent_of_male = ifelse(
+      is.na(wage_percent_of_male),
+      (total_earnings_female / total_earnings_male) * 100,
+      wage_percent_of_male
+    )
+  )
+
+write_csv(wage_data_imputed, "wage_data_imputed.csv")
+
+```
+
+  We saw a considerable amount of missing values in the wage_percent_of_male column of our dataset. The
+author of TidyTuesday noted this is because those occupations have small sample sizes in total_workers,
+workers_male, and workers_female. The wage_percent_of_male metric calculated from those values may
+be unrepresentative and was thus reported as NA.
+  To address this, we conducted two separate analyses. In one version, we drop all observation with NA
+wage_percent_of_male values, and filtered out all observation of that same occupation across other years
+for better reliability and consistency for our time-series analysis. We called this case our complete case.
+  In the other, we retained these observations, as occupations with small workforce sizes or extreme gender
+composition may actually capture insightful patterns. For this set of analysis, we recomputed the NA
+wage_percent_of_male values using the total_earnings_male and total_earnings_female columns. We called this case our imputed case.
+  In terms of data transformation, we created a new variable: wage_gap. It measures the dollar difference
+between the male and female median earnings (male minus female). This variable captures the magnitude
+of the wage disparity in absolute terms and complements the percentage-based measure.
+
+Codebook
+
+```{r, echo=FALSE}
+codebook <- tribble(
+  ~variable, ~class, ~description,
+  "year", "integer", "Year",
+  "occupation", "character", "Specific job/career",
+  "major_category", "character", "Broad category of occupation",
+  "minor_category", "character", "Fine category of occupation",
+  "total_workers", "double", "Total estimated full-time workers > 16 years old",
+  "workers_male", "double", "Estimated MALE full-time workers > 16 years old",
+  "workers_female", "double", "Estimated FEMALE full-time workers > 16 years old",
+  "percent_female", "double", "Percent of females in occupation",
+  "total_earnings", "double", "Median earnings for all workers",
+  "total_earnings_male", "double", "Median earnings for male workers",
+  "total_earnings_female", "double", "Median earnings for female workers",
+  "wage_percent_of_male", "double", "Female earnings as % of male earnings",
+  "wage_gap", "double", "Difference between male and female median earnings"
+)
+
+codebook %>%
+  kable(caption = "Data Dictionary") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+```
+
+
+
+Data Visualization:
+```{r, echo=FALSE}
+# Plot 1: Distribution of wage_percent_of_male (Complete-Cases)
+ggplot(wage_data_complete_cases, aes(x = wage_percent_of_male)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 40,
+                 fill = "#4472C4",
+                 color = "white",
+                 alpha = 0.85) +
+
+  geom_vline(xintercept = median(wage_data_complete_cases$wage_percent_of_male, na.rm = TRUE),
+             color = "#C00000", linewidth = 0.8) +
+  scale_x_continuous(limits = c(0, 150)) +
+  scale_y_continuous(limits = c(0, 0.06)) +
+  labs(
+    title = "Distribution of Wage Ratio Across Occupations (Complete-Cases)",
+    x = "Female Earnings as % of Male Earnings",
+    y = "Density",
+    caption = "Source: BLS via TidyTuesday | 2013–2016"
+  ) +
+  theme_minimal(base_size = 13)+
+theme(
+  plot.title = element_text(size = 10),
+  axis.text = element_text(size = 9),
+  axis.title = element_text(size = 9),
+  plot.caption = element_text(size = 8)
+)
+
+```
+Figure 1 shows the distribution of female earnings as a percentage of male earnings across occupations. Most occupations are centered below the 100% parity line, with a median around 85%, indicating a persistent gender wage gap across the dataset.
+
+
+```{r, include=FALSE}
+# Plot 2: Distribution of wage_percent_of_male (All Occupations)
+ggplot(wage_data_imputed, aes(x = wage_percent_of_male)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 40,
+                 fill = "#4472C4",
+                 color = "white",
+                 alpha = 0.85) +
+
+  geom_vline(xintercept = median(wage_data_imputed$wage_percent_of_male, na.rm = TRUE),
+             color = "#C00000", linewidth = 0.8) +
+  scale_x_continuous(limits = c(0, 150)) +
+  scale_y_continuous(limits = c(0, 0.06)) +
+  labs(
+    title = "Distribution of Wage Ratio Across Occupations (All Occupations)",
+    x = "Female Earnings as % of Male Earnings",
+    y = "Density",
+      caption = "Source: BLS via TidyTuesday | 2013–2016 "
+  ) +
+  theme_minimal(base_size = 13)+
+theme(
+  plot.title = element_text(size = 10),
+  axis.text = element_text(size = 9),
+  axis.title = element_text(size = 9),
+  plot.caption = element_text(size = 8)
+)
+# The distribution of wage parity across occupations was centered below the 100% parity line, with most occupations clustered around 80–90%. This suggests that women generally earned less than men across the occupations in the dataset. The distribution also showed some variation across occupations, with a small number of occupations exceeding wage parity.
+```
+
+
+
+```{r, echo=FALSE}
+# Plot 3: Trend of median wage parity over time, by major_category (Complete-Cases)
+wage_data_complete_cases %>%
+  group_by(year, major_category) %>%
+  summarise(median_wage_pct = median(wage_percent_of_male, na.rm = TRUE),
+            .groups = "drop") %>%
+  ggplot(aes(x = year, y = median_wage_pct,
+             color = major_category, group = major_category)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2.5) +
+  geom_hline(yintercept = 100, linetype = "dashed",
+             color = "black", alpha = 0.5) +
+  scale_x_continuous(breaks = 2013:2016) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"),
+                     limits = c(70, 110)) +
+  scale_color_brewer(palette = "Set2") +
+  
+  labs(
+    title = "Wage Ratio by Industry Sector (Complete-Cases)",
+    subtitle = "Dashed line = wage parity (100%)",
+    x = "Year",
+    y = "Median Female Earnings as % of Male",
+color = "Industry Sector",
+caption = "Source: BLS via TidyTuesday | 2013–2016"
+) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    plot.subtitle = element_text(size = 9, color = "gray40"),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 9),
+    legend.text = element_text(size = 9),
+    legend.title = element_text(size = 9),
+    plot.caption = element_text(size = 8),
+    legend.position = "right"
+    )
+
+```
+Figure 2 Shows the median female earnings as a percentage of male earnings across major occupation categories from 2013-2016, in our complete cases dataset. Most industries remained below the 100% parity line throughout the period, although the size of the wage gap varied across sectors. Overall, wage parity appeared relatively stable over time, with only small changes across industries.
+
+```{r, echo=FALSE}
+# Plot 4: Trend of median wage parity over time, by major_category (All Occupations)
+# Outcome variable (wage_percent_of_male) x time x category
+wage_data_imputed %>%
+  group_by(year, major_category) %>%
+  summarise(median_wage_pct = median(wage_percent_of_male, na.rm = TRUE),
+            .groups = "drop") %>%
+  ggplot(aes(x = year, y = median_wage_pct,
+             color = major_category, group = major_category)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2.5) +
+  geom_hline(yintercept = 100, linetype = "dashed",
+             color = "black", alpha = 0.5) +
+  scale_x_continuous(breaks = 2013:2016) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"),
+                     limits = c(70, 110)) +
+  scale_color_brewer(palette = "Set2") +
+  labs(
+    title = "Wage Ratio by Industry Sector (All Occupations)",
+    subtitle = "Dashed line = wage parity (100%)",
+    x = "Year",
+    y = "Median Female Earnings as % of Male",
+    color = "Industry Sector",
+    caption = "Source: BLS via TidyTuesday | 2013–2016"
+    ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    plot.subtitle = element_text(size = 9, color = "gray40"),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 9),
+    legend.text = element_text(size = 9),
+    legend.title = element_text(size = 9),
+    plot.caption = element_text(size = 8),
+    legend.position = "right"
+    )
+```
+Figure 3 shows median female earnings as a percentage of male earnings across major occupation categories from 2013–2016, using our imputed data set. All industries remained below the 100% parity line, though the size of the wage gap varied across sectors. Overall, wage parity remained relatively stable over time, with some industries showing greater fluctuation than others.
+
+```{r, echo=FALSE}
+# Plot 5: Scatter — percent_female vs wage_percent_of_male (Complete-Cases)
+
+ggplot(wage_data_complete_cases, aes(x = percent_female, y = wage_percent_of_male,
+                                     color = major_category)) +
+  geom_point(alpha = 0.35, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE,
+              color = "black", linewidth = 1.2,
+              linetype = "solid") +
+  geom_hline(yintercept = 100, linetype = "dashed",
+             color = "red", alpha = 0.7) +
+  scale_x_continuous(labels = function(x) paste0(x, "%")) +
+  scale_y_continuous(labels = function(x) paste0(x, "%")) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title = "Occupation Feminization and Wage Parity (Complete-Cases)",
+    subtitle = "Each point = one occupation-year; black line = linear trend",
+    x = "Percent of Workers Who Are Female",
+    y = "Female Earnings as % of Male Earnings",
+    color = "Industry Sector",
+    caption = "Source: BLS via TidyTuesday | 2013–2016"
+    ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    plot.subtitle = element_text(size = 9, color = "gray40"),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 9),
+    legend.text = element_text(size = 9),
+    legend.title = element_text(size = 9),
+    plot.caption = element_text(size = 8),
+    legend.position = "right"
+    )
+```
+Figure 4 shows the relationship between occupational gender composition and wage parity, using complete cases. The positive trend line suggests that occupations with higher percentages of female workers tended to have slightly higher female earnings relative to male earnings, although most occupations still remained below the 100% parity line. Each point represents one occupation-year observation, while colors indicate the major occupation category.
+
+```{r, echo=FALSE}
+# Plot 6: Scatter — percent_female vs wage_percent_of_male (All Occupations)
+ggplot(wage_data_imputed, aes(x = percent_female, y = wage_percent_of_male,
+                              color = major_category)) +
+  geom_point(alpha = 0.35, size = 1.8) +
+  geom_smooth(method = "lm", se = TRUE,
+              color = "black", linewidth = 1.2,
+              linetype = "solid") +
+  geom_hline(yintercept = 100, linetype = "dashed",
+             color = "red", alpha = 0.7) +
+  scale_x_continuous(labels = function(x) paste0(x, "%")) +
+  scale_y_continuous(labels = function(x) paste0(x, "%")) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title = "Occupation Feminization and Wage Parity (All Occupations)",
+    subtitle = "Each point = one occupation-year; black line = linear trend",
+    x = "Percent of Workers Who Are Female",
+    y = "Female Earnings as % of Male Earnings",
+    color = "Industry Sector",
+    caption = "Source: BLS via TidyTuesday | 2013–2016"
+    ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 10),
+    plot.subtitle = element_text(size = 9, color = "gray40"),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 9),
+    legend.text = element_text(size = 9),
+    legend.title = element_text(size = 9),
+    plot.caption = element_text(size = 8),
+    legend.position = "right"
+    )
+```
+Figure 5 shows the relationship between occupational gender composition and wage parity across all occupations, including imputed observations. While the overall positive relationship remains similar to the complete-case analysis, the inclusion of imputed values introduces greater variation and several extreme outliers above the 100% parity line. Each point represents one occupation-year observation, while colors indicate the major occupation category.
+
+# Methodology
+To answer our question, we used k-means clustering, multiple linear regression, and lasso and ridge modeling. We used the complete cases data set, as seen in the eda the complete cases data set proved to be more stable, so to ensure accuracy we used teh complete cases data set in our modeling. 
+
+Multiple Linear Regression
+  We begin by using multiple linear regression to analyze how occupational characteristics relate to female earnings as a percentage of male earnings. The results show that percent female has a positive and statistically significant relationship with wage parity, suggesting that occupations with higher percentages of female workers tend to have slightly higher female earnings relative to male earnings. Several industry categories also show meaningful differences in wage parity, while total workers is not statistically significant, as you can see in model 1.. Overall, the model suggests that occupation composition and industry structure are associated with variation in the gender wage gap across occupations.
+
+Lasso and Ridge Regression
+  We then used Lasso and Ridge regression to address multicollinearity and identify important predictors. An 80/20 train-test split was implemented to predict female earnings as a percentage of male earnings using percent female, total workers, industry, and year as predictors. Cross-validation was used to select the penalty parameter, and model performance was evaluated using R-squared.
+  The results show that percent female remained an important predictor in both models and was not shrunk toward zero, indicating its continued significance. Lasso did not eliminate any variables, suggesting that multiple factors contribute to the gender wage gap rather than a single dominant driver. Ridge regression produced a similar pattern, and both models yielded comparable R-squared values. Even with regularization, the models did not explain substantially more variation, implying that important explanatory variables may be missing from the dataset.
+  
+  
+K-MEANS
+  Finally, we used K-means clustering to explore patterns in the data beyond predefined industry categories. The clusters show groupings based on percent female and female earnings as a percentage of male earnings. For example, one cluster contains more female-dominated occupations with relatively higher wage parity, while another captures more male-dominated occupations with lower wage parity outcomes. A third cluster reflects occupations with lower wage parity across a wider range of gender compositions. This suggests that wage patterns are shaped not only by industry, but also by broader structural characteristics within occupations.
+  As shown in Figure 7, each cluster contains a mix of major occupation categories, suggesting that the original industry classifications are not strong standalone identifiers of wage gap patterns. The K-means model was based on two variables because adding additional variables made the clusters more difficult to interpret and visualize clearly.
+  
+  Overall, across all methods, we find a consistent relationship between gender composition and wage outcomes, highlighting that the wage gap varies systematically across occupations.
+  
+```{r, echo=FALSE}
+library(modelsummary)
+
+Linear_regression <- lm(
+  wage_percent_of_male ~ percent_female +
+    log(total_workers) +
+    factor(year) +
+    major_category,
+  data = wage_data_complete_cases
+)
+
+modelsummary(
+  Linear_regression,
+ 
+  statistic = "std.error",
+ 
+  stars = TRUE,
+  fmt = 3,
+  title = "Model 1: Determinants of Wage Parity",
+ 
+  coef_rename = c(
+    "(Intercept)" = "Intercept",
+    "percent_female" = "Percent Female",
+    "log(total_workers)" = "Log(Total Workers)",
+    "factor(year)2013" = "Year: 2013",
+    "factor(year)2014" = "Year: 2014",
+    "factor(year)2015" = "Year: 2015",
+    "factor(year)2016" = "Year: 2016",
+   
+    "major_categoryEducation, Legal, Community Service, Arts, and Media" =
+      "Education / Arts / Media",
+   
+    "major_categoryHealthcare Practitioners and Technical" =
+      "Healthcare",
+   
+    "major_categoryManagement, Business, and Financial" =
+      "Management & Business",
+   
+    "major_categoryNatural Resources, Construction, and Maintenance" =
+      "Construction & Maintenance",
+   
+    "major_categoryProduction, Transportation, and Material Moving" =
+      "Production & Transport",
+   
+    "major_categorySales and Office" =
+      "Sales & Office",
+   
+    "major_categoryService" =
+      "Service Occupations"
+  )
+)
+```
+Table 2 presents the results of the multiple linear regression model predicting female earnings as a percentage of male earnings using occupation characteristics, workforce size, year fixed effects, and major occupation categories.
+
+
+```{r, echo=FALSE}
+library(glmnet)
+# Set seed so the train/test split can be reproduced
+set.seed(123)
+
+# Create an 80/20 train-test split
+train_idx <- sample(1:nrow(wage_data_complete_cases), 0.8 * nrow(wage_data_complete_cases))
+
+train <- wage_data_complete_cases[train_idx, ]
+test  <- wage_data_complete_cases[-train_idx, ]
+
+# Create model matrices for glmnet
+# Outcome: female earnings as a percentage of male earnings
+# Predictors: percent female, total workers, major occupation category, and year
+x_train <- model.matrix(
+  wage_percent_of_male ~ percent_female + total_workers + major_category + year,
+  data = train
+)[, -1]
+
+y_train <- train$wage_percent_of_male
+
+x_test <- model.matrix(
+  wage_percent_of_male ~ percent_female + total_workers + major_category + year,
+  data = test)[, -1]
+
+y_test <- test$wage_percent_of_male
+
+# Fit Lasso model using cross-validation
+# alpha = 1 means Lasso
+lasso_model <- cv.glmnet(x_train, y_train, alpha = 1)
+
+# Fit Ridge model using cross-validation
+# alpha = 0 means Ridge
+ridge_model <- cv.glmnet(x_train, y_train, alpha = 0)
+
+# Generate predictions on the test set
+lasso_pred <- predict(lasso_model, s = "lambda.min", newx = x_test)
+ridge_pred <- predict(ridge_model, s = "lambda.min", newx = x_test)
+
+# Calculate model performance: MSE and R-squared
+lasso_mse <- mean((y_test - lasso_pred)^2)
+lasso_r2 <- 1 - sum((y_test - lasso_pred)^2) / sum((y_test - mean(y_test))^2)
+
+ridge_mse <- mean((y_test - ridge_pred)^2)
+ridge_r2 <- 1 - sum((y_test - ridge_pred)^2) / sum((y_test - mean(y_test))^2)
+
+# Create a clean results table
+model_results <- tibble(
+  Model = c("Lasso", "Ridge"),
+  MSE = c(lasso_mse, ridge_mse),
+  R_squared = c(lasso_r2, ridge_r2)
+)
+
+model_results
+```
+Table 3 compares the predictive performance of the Lasso and Ridge regression models. Both models were trained using an 80/20 train-test split and evaluated using mean squared error and R-squared. The similar R-squared values suggest that both regularized models explain a comparable amount of variation in female earnings as a percentage of male earnings.
+
+```{r, include=FALSE}
+# Display Lasso coefficients at the optimal lambda value
+coef(lasso_model, s = "lambda.min")
+coef(ridge_model, s = "lambda.min")
+# Lasso retained most predictors, although several industry-category coefficients were shrunk very close to zero, suggesting that some occupation categories contributed relatively little predictive information compared to variables such as percent female.
+```
+
+
+```{r, echo=FALSE}
+kmeans_data <- wage_data_complete_cases  %>%
+  select(percent_female, wage_percent_of_male) %>%
+  drop_na()
+
+scaled_data <- scale(kmeans_data)
+
+set.seed(123)
+kmeans_model <- kmeans(scaled_data, centers = 3, nstart = 25)
+
+wage_data_complete_cases $cluster <- NA
+wage_data_complete_cases $cluster[complete.cases(kmeans_data)] <- kmeans_model$cluster
+
+ggplot(wage_data_complete_cases , aes(x = percent_female, y = wage_percent_of_male, color = factor(cluster))) +
+  geom_point(alpha = 0.5) +
+  labs(color = "Cluster")
+
+```
+Figure 6: presents the K-means clustering results using percent female and female earnings as a percentage of male earnings. Each point represents one occupation-year observation, with colors indicating the assigned cluster. The clusters suggest that occupations group together based on patterns in gender composition and wage parity.
+
+```{r, echo=FALSE}
+ggplot(wage_data_complete_cases  %>%
+         filter(!is.na(cluster)) %>%
+         group_by(cluster, major_category) %>%
+         summarise(n = n(), .groups = "drop"),
+       aes(x = major_category, y = n, fill = factor(cluster))) +
+  geom_col(position = "dodge") +
+  coord_flip()
+
+
+
+```
+Figure 7 shows the distribution of major occupation categories across the three K-means clusters. The clusters differ in their concentration of industry sectors, suggesting that occupation groupings are influenced by both industry structure and gender composition.
+
+
+# Results:
+  The analysis shows that the gender wage gap persisted across occupations throughout 2013–2016, with female earnings generally remaining below male earnings across most industries. Descriptive analysis found that female earnings averaged roughly 84% of male earnings, indicating a consistent wage disparity within the dataset.
+
+  The multiple linear regression results suggest that occupational gender composition is significantly associated with wage parity. Occupations with higher percentages of female workers tended to have slightly higher female earnings relative to male earnings. However, the relationship varied across industries, and several occupation categories displayed meaningful differences in wage parity outcomes. The relatively low R-squared values suggest that additional unobserved factors likely contribute to variation in the wage gap.
+  Percent female remained statistically significant across the regression models and was also retained in both regularized models, suggesting that occupational gender composition is an important predictor of wage parity. In contrast, total workers was not statistically significant in the multiple linear regression and had relatively little influence in the regularized models. Several industry categories also showed meaningful differences in wage parity outcomes.
+  
+  The Lasso and Ridge regression models produced similar findings. Percent female remained one of the strongest predictors in both regularized models, while several industry-category coefficients were shrunk close to zero. This suggests that occupational gender composition plays an important role in explaining wage parity, although multiple variables contribute to wage differences across occupations.
+  The Lasso model identified percent female as one of the strongest retained predictors of wage parity. In contrast, total workers was shrunk very close to zero, suggesting limited predictive importance. The year variable was effectively removed from the model, indicating that time effects contributed relatively little explanatory power compared to occupation characteristics and industry structure. Ridge regression produced similar overall predictive performance.
+ 
+  K-means clustering further showed that industry alone does not fully explain wage patterns. The clustering results identified occupation groupings based on gender composition and wage parity rather than strictly by predefined industry categories. Each cluster contained a mix of major occupation sectors, suggesting that broader structural characteristics within occupations influence wage outcomes across the labor market.
+
+# Discussion
+  This analysis has several limitations. First, the dataset only covers the years 2013–2016, meaning the results may not fully reflect more recent labor market trends or changes in wage inequality over time. In addition, the dataset is highly aggregated at the occupation level, which limits the ability to account for important individual-level factors such as education, experience, hours worked, geographic location, and firm-specific differences.
+  
+  There are also methodological limitations to consider. The regression models identify correlations rather than causal relationships, meaning we cannot conclude that changes in occupational gender composition directly cause changes in the wage gap. Additionally, the relatively low R-squared values suggest that other important explanatory variables are missing from the analysis. The K-means clustering also showed overlap across clusters, indicating that occupation groupings are not perfectly distinct and that wage patterns are influenced by multiple interacting factors.
+  
+  Future research could improve this analysis by using a longer time range and incorporating more detailed individual-level data. Additional research could also examine how occupational segregation, education, and labor market structure contribute to wage disparities beyond gender composition alone.
+
+
