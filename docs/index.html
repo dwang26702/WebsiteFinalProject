@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Math244Report – M244 Project</title>
+<title>M244 Project</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -159,6 +124,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#exploring-the-data" id="toc-exploring-the-data" class="nav-link" data-scroll-target="#exploring-the-data">Exploring the Data</a></li>
+  <li><a href="#codebook" id="toc-codebook" class="nav-link" data-scroll-target="#codebook">Codebook</a></li>
+  <li><a href="#data-visualization" id="toc-data-visualization" class="nav-link" data-scroll-target="#data-visualization">Data Visualization:</a></li>
   <li><a href="#methodology" id="toc-methodology" class="nav-link" data-scroll-target="#methodology">Methodology</a></li>
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results:</a></li>
   <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a></li>
@@ -166,25 +133,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">Math244Report</h1>
-</div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
 
 
-
-<div class="quarto-title-meta">
-
-    
-  
-    
-  </div>
-  
-
-
-</header>
 
 
 <hr>
@@ -200,23 +151,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This project analyzes the Gender Wage Gap between 2013-2016.</p>
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>While the gender wage gap is well known, it doesn’t affect all occupations equally. Some industries show larger differences than others. This raises an important question — what factors actually drive these wage differences? Specifically, this project asks whether occupation gender composition, workforce size, and industry category are associated with differences in the gender wage gap across occupations. Understanding this can help us move beyond just identifying the gap to explaining it. Our goal is to look at occupation-level variation in the gender wage gap to understand what factors drive differences in earnings. The data comes from TidyTuesday, which sourced the dataset from the Bureau of Labor Statistics. The data was collected from 2013 to 2016 and has about 2,000 observations that focus on earnings, percent female, and industry. For methods, we use linear regression to analyze relationships, Lasso and Ridge to identify important predictors, and K-means to explore patterns beyond industry categories.</p>
+<p>While the gender wage gap is well known, it doesn’t affect all occupations equally. This raises the question of what factors actually drive these wage differences. This project specifically asks whether occupation gender composition, workforce size, and industry category are associated with differences in the gender wage gap across occupations. Understanding it can help us explain the gender-wage gap rather than just acknowledging it exists.</p>
+<p>Our focus is on occupation-level variation in the gender wage gap to understand what factors drive differences in earnings. We sourced our data from TidyTuesday, which obtained it from the Bureau of Labor Statistics. The data were collected from 2013 to 2016 and include about 2,000 observations on earnings, percent female, and industry. To analyze the data, our methods included linear regression to analyze relationships, Lasso and Ridge to identify important predictors, and K-means to explore patterns beyond industry categories.</p>
 </section>
 <section id="exploring-the-data" class="level1">
 <h1>Exploring the Data</h1>
-<p>One of our outcome variables, which we created is wage_gap, calculated as the dollar difference between male and female median earnings. This variable captures the raw income disparity and allows us to examine the magnitude of the earnings gap. We expect this value to be generally positive, indicating men have a higher median earnings across most occupations.</p>
-<p>A second outcome variable we are using, wage_percent_of_male, is included in our dataset. It measures female median earnings as a percentage of male median earnings. A value of 100 would indicate perfect parity; values below 100 indicate women earn less than men. This variable allows us to analyze relative disparity. We expect this variable to generally fall below 100 for most occupations.</p>
-<p>Our key explanatory variables are: -percent_female: The percent of females for specific occupation -total_workers: Total estimated full-time workers &gt; 16 years old -major_category: Broad category of occupation -minor_category: Fine category of occupation -occupation: Specific job/career -year: years from 2013-2016</p>
-<p>We chose those variables based on both economic reasoning and our EDA. Percent female captures gender composition, which is central to our question, while total workers and industry categories help control for structural differences across occupations. The inclusion of year also allows us to examine whether patterns in the wage gap changed over time.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Select the variables we plan to use</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>wages_selected <span class="ot">&lt;-</span> wage_data <span class="sc">%&gt;%</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(wage_percent_of_male, percent_female,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  year, major_category, minor_category,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  percent_female, total_workers,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  major_category, minor_category,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  occupation, year)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
+<p>One of our outcome variables, which we created, is wage_gap, calculated as the dollar difference between male and female median earnings. This variable captures the raw income disparity and allows us to examine the magnitude of the earnings gap. We expect this value to be generally positive, indicating men have a higher median earnings across most occupations.</p>
+<p>A second outcome variable we are using, wage_percent_of_male, is included in our dataset. It measures female median earnings relative to male median earnings. A value of 100 would indicate perfect parity. Values below 100 indicate women earn less than men. This variable allows us to analyze relative disparity. We expect this variable to generally fall below 100 for most occupations.</p>
+<p>Our key explanatory variables are:</p>
+<p>-percent_female: The percent of females for a specific occupation</p>
+<p>-total_workers: Total estimated full-time workers &gt; 16 years old</p>
+<p>-major_category: Broad category of occupation</p>
+<p>-minor_category: Fine category of occupation</p>
+<p>-occupation: Specific job/career</p>
+<p>-year: years from 2013-2016</p>
+<p>We chose those variables based on both economic reasoning and our EDA. Percent female captures gender composition, which is central to our question, while total workers and industry categories help control for structural differences across occupations. Including the year also allows us to examine whether patterns in the wage gap changed over time.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="table table-striped caption-top table-sm small">
@@ -264,11 +213,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </div>
 </div>
-<p>Table 1 summarizes the key variables used in the analysis. Female earnings averaged 84% of male earnings across occupations, while percent female ranged from 0% to 100%, showing substantial variation in occupational gender composition. The total number of workers also varied considerably across occupations and industries.</p>
-<p>Looking at the overview of summary statistics below, everything is based off women. First, women earn about 84% of male earnings on average, which already shows a noticeable wage gap. Second, the median wage gap is around $8,600, which isn’t a small difference. And finally, there’s a lot of variation in percent female across occupations—from almost 0% to 100%—which makes it a really important variable to analyze</p>
+<p>Table 1: Summarizes key variables used in the analysis.</p>
+<p>Looking at the overview of summary statistics below, everything is based on women. First, women earn about 84% of men’s earnings on average, indicating a noticeable wage gap. Second, the median wage gap is around $8,600, which isn’t a small difference. And finally, there’s a lot of variation in percent female across occupations—from almost 0% to 100%—which makes it a really important variable to analyze</p>
 <p>Data Wrangling and Transformation</p>
-<p>We saw a considerable amount of missing values in the wage_percent_of_male column of our dataset. The author of TidyTuesday noted this is because those occupations have small sample sizes in total_workers, workers_male, and workers_female. The wage_percent_of_male metric calculated from those values may be unrepresentative and was thus reported as NA. To address this, we conducted two separate analyses. In one version, we drop all observation with NA wage_percent_of_male values, and filtered out all observation of that same occupation across other years for better reliability and consistency for our time-series analysis. We called this case our complete case. In the other, we retained these observations, as occupations with small workforce sizes or extreme gender composition may actually capture insightful patterns. For this set of analysis, we recomputed the NA wage_percent_of_male values using the total_earnings_male and total_earnings_female columns. We called this case our imputed case. In terms of data transformation, we created a new variable: wage_gap. It measures the dollar difference between the male and female median earnings (male minus female). This variable captures the magnitude of the wage disparity in absolute terms and complements the percentage-based measure.</p>
-<p>Codebook</p>
+<p>We observed a significant number of missing values in the wage_percent_of_male column. The author of TidyTuesday explained that this occurs because those occupations have small sample sizes in total_workers, workers_male, and workers_female. Wage_percent_of_male calculated from these values may be unrepresentative, so it was reported as NA.</p>
+<p>To address this, we conducted two separate analyses. In one version, we dropped all observations with NA values for wage_percent_of_male. We also filtered out all observations of that occupation across other years to improve reliability and consistency in our time-series analysis. We called this case our complete case.</p>
+<p>In the other analysis, we retained these observations. Occupations with small workforce sizes or extreme gender composition may capture insightful patterns. For this set, we recomputed the NA values in wage_percent_of_male using the total_earnings_male and total_earnings_female columns. We called this case our imputed case.</p>
+<p>For data transformation, we created a new variable, wage_gap. It measures the dollar difference between the male and female median earnings (male minus female). This variable captures the magnitude of wage disparity in absolute terms. It complements the percentage-based measure.</p>
+</section>
+<section id="codebook" class="level1">
+<h1>Codebook</h1>
 <div class="cell">
 <div class="cell-output-display">
 <table class="table table-striped table-hover caption-top table-sm small">
@@ -350,7 +304,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </div>
 </div>
-<p>Data Visualization:</p>
+</section>
+<section id="data-visualization" class="level1">
+<h1>Data Visualization:</h1>
 <div class="cell">
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Removed 2 rows containing missing values or values outside the scale range
@@ -364,7 +320,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Figure 1 shows the distribution of female earnings as a percentage of male earnings across occupations. Most occupations are centered below the 100% parity line, with a median around 85%, indicating a persistent gender wage gap across the dataset.</p>
+<p>Figure 1: Shows the distribution of female earnings as a percentage of male earnings across occupations. Most occupations are centered below the 100% parity line, with a median around 85%, indicating a persistent gender wage gap across the dataset.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -374,7 +330,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Figure 2 Shows the median female earnings as a percentage of male earnings across major occupation categories from 2013-2016, in our complete cases dataset. Most industries remained below the 100% parity line throughout the period, although the size of the wage gap varied across sectors. Overall, wage parity appeared relatively stable over time, with only small changes across industries.</p>
+<p>Figure 2: Shows the median female earnings as a percentage of male earnings across major occupation categories from 2013 to 2016, in our complete cases dataset. All industries’ median values remained below the 100% parity line throughout the period, although the size of the wage gap varied across sectors. Overall, wage parity appeared relatively stable over time, with only small changes across industries.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -384,7 +340,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Figure 3 shows median female earnings as a percentage of male earnings across major occupation categories from 2013–2016, using our imputed data set. All industries remained below the 100% parity line, though the size of the wage gap varied across sectors. Overall, wage parity remained relatively stable over time, with some industries showing greater fluctuation than others.</p>
+<p>Figure 3: Shows median female earnings as a percentage of male earnings across major occupation categories from 2013–2016, using our imputed data set. All industries’ median remained below the 100% parity line, though the size of the wage gap varied across sectors. Overall, wage parity remained relatively stable over time, with some industries showing greater fluctuation than others, compared to the complete case figure.</p>
 <div class="cell">
 <div class="cell-output cell-output-stderr">
 <pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
@@ -397,7 +353,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Figure 4 shows the relationship between occupational gender composition and wage parity, using complete cases. The positive trend line suggests that occupations with higher percentages of female workers tended to have slightly higher female earnings relative to male earnings, although most occupations still remained below the 100% parity line. Each point represents one occupation-year observation, while colors indicate the major occupation category.</p>
+<p>Figure 4: Shows the relationship between occupational gender composition and wage parity, using complete cases. The positive trend line suggests that occupations with higher percentages of female workers tend to have slightly higher female earnings relative to male earnings, although most occupations remain below the 100% parity line. Each point represents one occupation-year observation, while colors indicate the major occupation category.</p>
 <div class="cell">
 <div class="cell-output cell-output-stderr">
 <pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
@@ -422,11 +378,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="methodology" class="level1">
 <h1>Methodology</h1>
-<p>To answer our question, we used k-means clustering, multiple linear regression, and lasso and ridge modeling. We used the complete cases data set, as seen in the eda the complete cases data set proved to be more stable, so to ensure accuracy we used teh complete cases data set in our modeling.</p>
-<p>Multiple Linear Regression We begin by using multiple linear regression to analyze how occupational characteristics relate to female earnings as a percentage of male earnings. The results show that percent female has a positive and statistically significant relationship with wage parity, suggesting that occupations with higher percentages of female workers tend to have slightly higher female earnings relative to male earnings. Several industry categories also show meaningful differences in wage parity, while total workers is not statistically significant, as you can see in model 1.. Overall, the model suggests that occupation composition and industry structure are associated with variation in the gender wage gap across occupations.</p>
-<p>Lasso and Ridge Regression We then used Lasso and Ridge regression to address multicollinearity and identify important predictors. An 80/20 train-test split was implemented to predict female earnings as a percentage of male earnings using percent female, total workers, industry, and year as predictors. Cross-validation was used to select the penalty parameter, and model performance was evaluated using R-squared. The results show that percent female remained an important predictor in both models and was not shrunk toward zero, indicating its continued significance. Lasso did not eliminate any variables, suggesting that multiple factors contribute to the gender wage gap rather than a single dominant driver. Ridge regression produced a similar pattern, and both models yielded comparable R-squared values. Even with regularization, the models did not explain substantially more variation, implying that important explanatory variables may be missing from the dataset.</p>
-<p>K-MEANS Finally, we used K-means clustering to explore patterns in the data beyond predefined industry categories. The clusters show groupings based on percent female and female earnings as a percentage of male earnings. For example, one cluster contains more female-dominated occupations with relatively higher wage parity, while another captures more male-dominated occupations with lower wage parity outcomes. A third cluster reflects occupations with lower wage parity across a wider range of gender compositions. This suggests that wage patterns are shaped not only by industry, but also by broader structural characteristics within occupations. As shown in Figure 7, each cluster contains a mix of major occupation categories, suggesting that the original industry classifications are not strong standalone identifiers of wage gap patterns. The K-means model was based on two variables because adding additional variables made the clusters more difficult to interpret and visualize clearly.</p>
-<p>Overall, across all methods, we find a consistent relationship between gender composition and wage outcomes, highlighting that the wage gap varies systematically across occupations.</p>
+<p>To answer our question, we used k-means clustering, multiple linear regression, and lasso and ridge modeling. We used the complete-case data set, as shown in the EDA. The complete cases data set proved more stable, so to ensure accuracy, we used it in our modeling. As shown in Figures 2–5, the complete-case data yielded more stable, less variable patterns during exploratory analysis. In contrast, the imputed dataset introduced greater dispersion and several extreme outliers, particularly in the scatterplot analysis. Using the complete-case dataset, therefore, improved interpretability and consistency across the modeling approaches.</p>
+<p>We used the complete-cases dataset for the primary statistical modeling because it yielded more stable, consistent estimates during exploratory analysis. The main outcome variable for the modeling was wage_percent_of_male, which measures female median earnings as a percentage of male median earnings across occupations.</p>
+<p>To analyze the relationship between occupation characteristics and wage parity, we first applied a multiple linear regression model. The predictors included percent female, total workers, year fixed effects, and major occupation categories. This allowed us to estimate how workforce composition and industry structure relate to differences in wage parity across occupations.</p>
+<p>We then implemented Lasso and Ridge regression models to address potential multicollinearity and evaluate predictor importance under regularization. The data was split into 80% for training and 20% for testing. Cross-validation was used to select the optimal penalty parameter (lambda). Model performance was evaluated using Mean Squared Error (MSE) and R-squared values on the testing data.</p>
+<p>Finally, we used K-means clustering to explore whether occupations formed natural groupings beyond predefined industry categories. Clustering was performed using percent_female and wage_percent_of_male, since including additional variables reduced interpretability and made visualization more difficult. Three clusters were selected to identify broader structural patterns in wage parity across occupations.</p>
 <div class="cell">
 <div class="cell-output-display">
 <!-- preamble start -->
@@ -435,25 +391,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
     <script>
       // Create table-specific functions using external factory
-      const tableFns_srkg29w54mpnovveqye2 = TinyTable.createTableFunctions("tinytable_srkg29w54mpnovveqye2");
+      const tableFns_w1b99nc937e3i7s1yeya = TinyTable.createTableFunctions("tinytable_w1b99nc937e3i7s1yeya");
       // tinytable span after
       window.addEventListener('load', function () {
           var cellsToStyle = [
             // tinytable style arrays after
-          { positions: [ { i: '34', j: 2 } ], css_id: 'tinytable_css_51s38qoek9ym4hgcx9o1',}, 
-          { positions: [ { i: '26', j: 2 } ], css_id: 'tinytable_css_mwxuimdqmanigkbjjzg6',}, 
-          { positions: [ { i: '1', j: 2 }, { i: '2', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '6', j: 2 }, { i: '7', j: 2 }, { i: '8', j: 2 }, { i: '9', j: 2 }, { i: '10', j: 2 }, { i: '11', j: 2 }, { i: '12', j: 2 }, { i: '13', j: 2 }, { i: '14', j: 2 }, { i: '15', j: 2 }, { i: '16', j: 2 }, { i: '17', j: 2 }, { i: '18', j: 2 }, { i: '19', j: 2 }, { i: '20', j: 2 }, { i: '21', j: 2 }, { i: '22', j: 2 }, { i: '23', j: 2 }, { i: '24', j: 2 }, { i: '25', j: 2 }, { i: '27', j: 2 }, { i: '28', j: 2 }, { i: '29', j: 2 }, { i: '30', j: 2 }, { i: '31', j: 2 }, { i: '32', j: 2 }, { i: '33', j: 2 } ], css_id: 'tinytable_css_wnem44cmpu1xr2aj7kov',}, 
-          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_9amdhsownw0l7sxujtfd',}, 
-          { positions: [ { i: '34', j: 1 } ], css_id: 'tinytable_css_u522ie5z01va64wafm26',}, 
-          { positions: [ { i: '26', j: 1 } ], css_id: 'tinytable_css_ebrlw3kkzf2mzw43yuj7',}, 
-          { positions: [ { i: '1', j: 1 }, { i: '2', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 }, { i: '6', j: 1 }, { i: '7', j: 1 }, { i: '8', j: 1 }, { i: '9', j: 1 }, { i: '10', j: 1 }, { i: '11', j: 1 }, { i: '12', j: 1 }, { i: '13', j: 1 }, { i: '14', j: 1 }, { i: '15', j: 1 }, { i: '16', j: 1 }, { i: '17', j: 1 }, { i: '18', j: 1 }, { i: '19', j: 1 }, { i: '20', j: 1 }, { i: '21', j: 1 }, { i: '22', j: 1 }, { i: '23', j: 1 }, { i: '24', j: 1 }, { i: '25', j: 1 }, { i: '27', j: 1 }, { i: '28', j: 1 }, { i: '29', j: 1 }, { i: '30', j: 1 }, { i: '31', j: 1 }, { i: '32', j: 1 }, { i: '33', j: 1 } ], css_id: 'tinytable_css_6yq2twrq4swm3ts76q4r',}, 
-          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_ify2nzlyjsfs5n237s8r',}, 
+          { positions: [ { i: '34', j: 2 } ], css_id: 'tinytable_css_3uwgrcau43lmesjjahnc',}, 
+          { positions: [ { i: '26', j: 2 } ], css_id: 'tinytable_css_8g3d66q3srkjt1n6ihl4',}, 
+          { positions: [ { i: '1', j: 2 }, { i: '2', j: 2 }, { i: '3', j: 2 }, { i: '4', j: 2 }, { i: '5', j: 2 }, { i: '6', j: 2 }, { i: '7', j: 2 }, { i: '8', j: 2 }, { i: '9', j: 2 }, { i: '10', j: 2 }, { i: '11', j: 2 }, { i: '12', j: 2 }, { i: '13', j: 2 }, { i: '14', j: 2 }, { i: '15', j: 2 }, { i: '16', j: 2 }, { i: '17', j: 2 }, { i: '18', j: 2 }, { i: '19', j: 2 }, { i: '20', j: 2 }, { i: '21', j: 2 }, { i: '22', j: 2 }, { i: '23', j: 2 }, { i: '24', j: 2 }, { i: '25', j: 2 }, { i: '27', j: 2 }, { i: '28', j: 2 }, { i: '29', j: 2 }, { i: '30', j: 2 }, { i: '31', j: 2 }, { i: '32', j: 2 }, { i: '33', j: 2 } ], css_id: 'tinytable_css_trrk13yec40lo6tsgx66',}, 
+          { positions: [ { i: '0', j: 2 } ], css_id: 'tinytable_css_w0ndfnqcdaazkdta1ol4',}, 
+          { positions: [ { i: '34', j: 1 } ], css_id: 'tinytable_css_shsk8ozunwgcut6dxmph',}, 
+          { positions: [ { i: '26', j: 1 } ], css_id: 'tinytable_css_oqnjac9hju27uu6uw1lc',}, 
+          { positions: [ { i: '1', j: 1 }, { i: '2', j: 1 }, { i: '3', j: 1 }, { i: '4', j: 1 }, { i: '5', j: 1 }, { i: '6', j: 1 }, { i: '7', j: 1 }, { i: '8', j: 1 }, { i: '9', j: 1 }, { i: '10', j: 1 }, { i: '11', j: 1 }, { i: '12', j: 1 }, { i: '13', j: 1 }, { i: '14', j: 1 }, { i: '15', j: 1 }, { i: '16', j: 1 }, { i: '17', j: 1 }, { i: '18', j: 1 }, { i: '19', j: 1 }, { i: '20', j: 1 }, { i: '21', j: 1 }, { i: '22', j: 1 }, { i: '23', j: 1 }, { i: '24', j: 1 }, { i: '25', j: 1 }, { i: '27', j: 1 }, { i: '28', j: 1 }, { i: '29', j: 1 }, { i: '30', j: 1 }, { i: '31', j: 1 }, { i: '32', j: 1 }, { i: '33', j: 1 } ], css_id: 'tinytable_css_tfy398k9idcf4sz7j4so',}, 
+          { positions: [ { i: '0', j: 1 } ], css_id: 'tinytable_css_62zrqwz033xoky8e9rtr',}, 
           ];
 
           // Loop over the arrays to style the cells
           cellsToStyle.forEach(function (group) {
               group.positions.forEach(function (cell) {
-                  tableFns_srkg29w54mpnovveqye2.styleCell(cell.i, cell.j, group.css_id);
+                  tableFns_w1b99nc937e3i7s1yeya.styleCell(cell.i, cell.j, group.css_id);
               });
           });
       });
@@ -462,17 +418,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/vincentarelbundock/tinytable@main/inst/tinytable.css">
     <style>
     /* tinytable css entries after */
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_51s38qoek9ym4hgcx9o1, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_51s38qoek9ym4hgcx9o1 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_mwxuimdqmanigkbjjzg6, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_mwxuimdqmanigkbjjzg6 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_wnem44cmpu1xr2aj7kov, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_wnem44cmpu1xr2aj7kov { text-align: center }
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_9amdhsownw0l7sxujtfd, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_9amdhsownw0l7sxujtfd {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_u522ie5z01va64wafm26, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_u522ie5z01va64wafm26 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_ebrlw3kkzf2mzw43yuj7, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_ebrlw3kkzf2mzw43yuj7 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_6yq2twrq4swm3ts76q4r, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_6yq2twrq4swm3ts76q4r { text-align: left }
-    #tinytable_srkg29w54mpnovveqye2 td.tinytable_css_ify2nzlyjsfs5n237s8r, #tinytable_srkg29w54mpnovveqye2 th.tinytable_css_ify2nzlyjsfs5n237s8r {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_3uwgrcau43lmesjjahnc, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_3uwgrcau43lmesjjahnc {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_8g3d66q3srkjt1n6ihl4, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_8g3d66q3srkjt1n6ihl4 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_trrk13yec40lo6tsgx66, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_trrk13yec40lo6tsgx66 { text-align: center }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_w0ndfnqcdaazkdta1ol4, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_w0ndfnqcdaazkdta1ol4 {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: center }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_shsk8ozunwgcut6dxmph, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_shsk8ozunwgcut6dxmph {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.08em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_oqnjac9hju27uu6uw1lc, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_oqnjac9hju27uu6uw1lc {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 0; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.1em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_tfy398k9idcf4sz7j4so, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_tfy398k9idcf4sz7j4so { text-align: left }
+    #tinytable_w1b99nc937e3i7s1yeya td.tinytable_css_62zrqwz033xoky8e9rtr, #tinytable_w1b99nc937e3i7s1yeya th.tinytable_css_62zrqwz033xoky8e9rtr {  position: relative; --border-bottom: 1; --border-left: 0; --border-right: 0; --border-top: 1; --line-color-bottom: var(--tt-line-color); --line-color-left: var(--tt-line-color); --line-color-right: var(--tt-line-color); --line-color-top: var(--tt-line-color); --line-width-bottom: 0.05em; --line-width-left: 0.1em; --line-width-right: 0.1em; --line-width-top: 0.08em; --trim-bottom-left: 0%; --trim-bottom-right: 0%; --trim-left-bottom: 0%; --trim-left-top: 0%; --trim-right-bottom: 0%; --trim-right-top: 0%; --trim-top-left: 0%; --trim-top-right: 0%; ; text-align: left }
     </style>
     <div class="container">
-      <table class="tinytable" id="tinytable_srkg29w54mpnovveqye2" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing="true">
+      <table class="tinytable" id="tinytable_w1b99nc937e3i7s1yeya" style="width: auto; margin-left: auto; margin-right: auto;" data-quarto-disable-processing="true">
         <caption>Model 1: Determinants of Wage Parity</caption>
         <thead>
               <tr>
@@ -624,7 +580,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- hack to avoid NA insertion in last line -->
 </div>
 </div>
-<p>Table 2 presents the results of the multiple linear regression model predicting female earnings as a percentage of male earnings using occupation characteristics, workforce size, year fixed effects, and major occupation categories.</p>
+<p>Table 2: Presents the results of the multiple linear regression model predicting female earnings as a percentage of male earnings using occupation characteristics, workforce size, year fixed effects, and major occupation categories.</p>
 <div class="cell">
 <div class="cell-output cell-output-stderr">
 <pre><code>Loading required package: Matrix</code></pre>
@@ -649,7 +605,7 @@ Attaching package: 'Matrix'</code></pre>
 2 Ridge  77.2     0.142</code></pre>
 </div>
 </div>
-<p>Table 3 compares the predictive performance of the Lasso and Ridge regression models. Both models were trained using an 80/20 train-test split and evaluated using mean squared error and R-squared. The similar R-squared values suggest that both regularized models explain a comparable amount of variation in female earnings as a percentage of male earnings.</p>
+<p>Table 3: Compares the predictive performance of the Lasso and Ridge regression models. Both models were trained using an 80/20 train-test split and evaluated using mean squared error and R-squared. The similar R-squared values suggest that both regularized models explain a comparable amount of variation in female earnings relative to male earnings.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -659,7 +615,7 @@ Attaching package: 'Matrix'</code></pre>
 </div>
 </div>
 </div>
-<p>Figure 6: presents the K-means clustering results using percent female and female earnings as a percentage of male earnings. Each point represents one occupation-year observation, with colors indicating the assigned cluster. The clusters suggest that occupations group together based on patterns in gender composition and wage parity.</p>
+<p>Figure 6: Presents the K-means clustering results using percent female and female earnings as a percentage of male earnings. Each point represents one occupation-year observation, with colors indicating the assigned cluster. The clusters suggest that occupations group together based on patterns in gender composition and wage parity.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -669,20 +625,23 @@ Attaching package: 'Matrix'</code></pre>
 </div>
 </div>
 </div>
-<p>Figure 7 shows the distribution of major occupation categories across the three K-means clusters. The clusters differ in their concentration of industry sectors, suggesting that occupation groupings are influenced by both industry structure and gender composition.</p>
+<p>Figure 7: Shows the distribution of major occupation categories across the three K-means clusters. The clusters differ in their concentration of industry sectors, suggesting that occupation groupings are influenced by both industry structure and gender composition.</p>
 </section>
 <section id="results" class="level1">
 <h1>Results:</h1>
-<p>The analysis shows that the gender wage gap persisted across occupations throughout 2013–2016, with female earnings generally remaining below male earnings across most industries. Descriptive analysis found that female earnings averaged roughly 84% of male earnings, indicating a consistent wage disparity within the dataset.</p>
-<p>The multiple linear regression results suggest that occupational gender composition is significantly associated with wage parity. Occupations with higher percentages of female workers tended to have slightly higher female earnings relative to male earnings. However, the relationship varied across industries, and several occupation categories displayed meaningful differences in wage parity outcomes. The relatively low R-squared values suggest that additional unobserved factors likely contribute to variation in the wage gap. Percent female remained statistically significant across the regression models and was also retained in both regularized models, suggesting that occupational gender composition is an important predictor of wage parity. In contrast, total workers was not statistically significant in the multiple linear regression and had relatively little influence in the regularized models. Several industry categories also showed meaningful differences in wage parity outcomes.</p>
-<p>The Lasso and Ridge regression models produced similar findings. Percent female remained one of the strongest predictors in both regularized models, while several industry-category coefficients were shrunk close to zero. This suggests that occupational gender composition plays an important role in explaining wage parity, although multiple variables contribute to wage differences across occupations. The Lasso model identified percent female as one of the strongest retained predictors of wage parity. In contrast, total workers was shrunk very close to zero, suggesting limited predictive importance. The year variable was effectively removed from the model, indicating that time effects contributed relatively little explanatory power compared to occupation characteristics and industry structure. Ridge regression produced similar overall predictive performance.</p>
-<p>K-means clustering further showed that industry alone does not fully explain wage patterns. The clustering results identified occupation groupings based on gender composition and wage parity rather than strictly by predefined industry categories. Each cluster contained a mix of major occupation sectors, suggesting that broader structural characteristics within occupations influence wage outcomes across the labor market.</p>
+<p>The analysis shows that the gender wage gap persisted across occupations throughout 2013–2016. Female earnings generally lag behind male earnings across most industries. Preliminary analysis found that female earnings averaged roughly 84% of male earnings, indicating a consistent wage disparity within the dataset.</p>
+<p>The multiple linear regression results suggest that gender composition, within an occupation, is significantly associated with wage parity. Occupations with higher percentages of female workers tend to have slightly higher female earnings relative to male earnings. The relationship varied across industries, and several occupational categories showed meaningful differences in wage-parity outcomes. The model has an R-squared of 0.109, suggesting that additional unobserved factors likely contribute to the variation in the wage gap.</p>
+<p>The percent female was found to be statistically significant, suggesting that occupational gender composition is an important predictor of wage parity. And, the total workers are not statistically significant and have relatively little influence in the regularized models. Several industry categories also showed meaningful differences in wage parity outcomes: management and business, production &amp; transport, and sales and office.</p>
+<p>The Lasso and Ridge regression models produced similar findings, with percent female among the strongest predictors in both. This shows that occupational gender composition plays a key role in explaining wage parity, although additional variables also contribute to wage differences across occupations.</p>
+<p>The Lasso model identified percent female as one of the strongest retained predictors of wage parity. In contrast, the total workers were shrunk very close to zero, suggesting limited predictive importance. The year variable was effectively removed from the model, indicating that time effects contributed relatively little explanatory power compared to occupation characteristics and industry structure. Ridge regression produced similar overall predictive performance. Both models have a low R-squared of 0.1425127, just like the MLR, but explain slightly more of the variation. Both models also typically predict female earnings as a percentage of male earnings within roughly 9 percentage points of the true value.</p>
+<p>To explore the patterns further, K-means clustering showed that industry alone does not fully explain wage patterns. The clustering results identified occupation groupings based on gender composition and wage parity rather than strictly by predefined industry categories. Each cluster contained a mix of major occupation sectors, suggesting that broader structural characteristics within occupations influence wage outcomes across the labor market.</p>
+<p>Taken together, these findings from all methods reveal a consistent relationship between gender composition and wage outcomes, highlighting that the wage gap varies systematically across occupations.</p>
 </section>
 <section id="discussion" class="level1">
 <h1>Discussion</h1>
-<p>This analysis has several limitations. First, the dataset only covers the years 2013–2016, meaning the results may not fully reflect more recent labor market trends or changes in wage inequality over time. In addition, the dataset is highly aggregated at the occupation level, which limits the ability to account for important individual-level factors such as education, experience, hours worked, geographic location, and firm-specific differences.</p>
-<p>There are also methodological limitations to consider. The regression models identify correlations rather than causal relationships, meaning we cannot conclude that changes in occupational gender composition directly cause changes in the wage gap. Additionally, the relatively low R-squared values suggest that other important explanatory variables are missing from the analysis. The K-means clustering also showed overlap across clusters, indicating that occupation groupings are not perfectly distinct and that wage patterns are influenced by multiple interacting factors.</p>
-<p>Future research could improve this analysis by using a longer time range and incorporating more detailed individual-level data. Additional research could also examine how occupational segregation, education, and labor market structure contribute to wage disparities beyond gender composition alone.</p>
+<p>One limitation is that the dataset covers only 2013-2016, so our results may not be fully representative of more recent labor market trends or changes in wage inequality over a longer time period. Also, the dataset includes only the person’s occupation level, making it impossible to control for individual-level factors such as education, experience, hours worked, geographic location, and firm-specific differences. Ideally, the dataset would also have more observations.</p>
+<p>In addition to data limitations, methodological constraints are also present. Regression models can only demonstrate correlations, not causality, so we cannot conclude that changes in the occupational gender composition directly cause changes in the wage gap. The low R-squared values of our models indicate that our analysis and data are missing other important explanatory variables.</p>
+<p>To address these limitations, future research to improve this analysis would be to use a longer time range and include more detailed individual-level data. Further research may also examine how occupational segregation, education, and labor market structure contribute to wage inequalities beyond gender composition alone.</p>
 
 
 </section>
