@@ -9,7 +9,7 @@ title: "MATH 244: Intermediate Data Science Project - Daniel and Anni"
 [Artwork by \@allison_horst](https://twitter.com/allison_horst)
 
 
-# This project analyzes the Gender Wage Gap between 2013-2016.
+# The Analysis of the Gender Wage Gap Between 2013-2016
 
 
 ```{r, include=FALSE}
@@ -161,7 +161,7 @@ codebook %>%
 
 
 # Data Visualization:
-```{r, echo=FALSE}
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
 # Plot 1: Distribution of wage_percent_of_male (Complete-Cases)
 ggplot(wage_data_complete_cases, aes(x = wage_percent_of_male)) +
   geom_histogram(aes(y = after_stat(density)),
@@ -338,7 +338,7 @@ ggplot(wage_data_complete_cases, aes(x = percent_female, y = wage_percent_of_mal
 ```
 Figure 4: Shows the relationship between occupational gender composition and wage parity, using complete cases. The positive trend line suggests that occupations with higher percentages of female workers tend to have slightly higher female earnings relative to male earnings, although most occupations remain below the 100% parity line. Each point represents one occupation-year observation, while colors indicate the major occupation category.
 
-```{r, echo=FALSE}
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
 # Plot 6: Scatter — percent_female vs wage_percent_of_male (All Occupations)
 ggplot(wage_data_imputed, aes(x = percent_female, y = wage_percent_of_male,
                               color = major_category)) +
@@ -440,7 +440,7 @@ modelsummary(
 Table 2: Presents the results of the multiple linear regression model predicting female earnings as a percentage of male earnings using occupation characteristics, workforce size, year fixed effects, and major occupation categories.
 
 
-```{r, echo=FALSE}
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
 library(glmnet)
 # Set seed so the train/test split can be reproduced
 set.seed(123)
@@ -493,7 +493,7 @@ model_results <- tibble(
   R_squared = c(lasso_r2, ridge_r2)
 )
 
-model_results
+knitr::kable(model_results)
 ```
 Table 3: Compares the predictive performance of the Lasso and Ridge regression models. Both models were trained using an 80/20 train-test split and evaluated using mean squared error and R-squared. The similar R-squared values suggest that both regularized models explain a comparable amount of variation in female earnings relative to male earnings.
 
