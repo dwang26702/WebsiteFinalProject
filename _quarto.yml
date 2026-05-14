@@ -8,9 +8,7 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - href: notes.qmd
-        text: Notes
-      - notes.qmd
+
 
 format:
   html:
