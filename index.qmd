@@ -4,14 +4,12 @@ title: "MATH 244: Intermediate Data Science Project - Daniel and Anni"
 
 ---
 
-Welcome! This is a template for creating a website using quarto and GitHub pages.
-
 ![](hedgehog.png){fig-align="center" width="603"}
 
 [Artwork by \@allison_horst](https://twitter.com/allison_horst)
 
 
-This project analyzes the Gender Wage Gap between 2013-2016.
+# This project analyzes the Gender Wage Gap between 2013-2016.
 
 
 ```{r, include=FALSE}
